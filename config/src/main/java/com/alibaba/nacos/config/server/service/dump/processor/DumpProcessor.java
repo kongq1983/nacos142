@@ -38,14 +38,14 @@ import java.util.Objects;
  * @date 2020/7/5 12:19 PM
  */
 public class DumpProcessor implements NacosTaskProcessor {
-    
+
     public DumpProcessor(DumpService dumpService) {
         this.dumpService = dumpService;
     }
-    
+
     @Override
     public boolean process(NacosTask task) {
-        final PersistService persistService = dumpService.getPersistService();
+        final PersistService persistService = dumpService.getPersistService(); // 获取操作数据库的Service  非standalone=ExternalStoragePersistServiceImpl
         DumpTask dumpTask = (DumpTask) task;
         String[] pair = GroupKey2.parseKey(dumpTask.getGroupKey());
         String dataId = pair[0];
@@ -55,39 +55,39 @@ public class DumpProcessor implements NacosTaskProcessor {
         String handleIp = dumpTask.getHandleIp();
         boolean isBeta = dumpTask.isBeta();
         String tag = dumpTask.getTag();
-        
+        // 构建ConfigDumpEvent事件
         ConfigDumpEvent.ConfigDumpEventBuilder build = ConfigDumpEvent.builder().namespaceId(tenant).dataId(dataId)
                 .group(group).isBeta(isBeta).tag(tag).lastModifiedTs(lastModified).handleIp(handleIp);
-        
+
         if (isBeta) {
             // beta发布，则dump数据，更新beta缓存
-            ConfigInfo4Beta cf = persistService.findConfigInfo4Beta(dataId, group, tenant);
-            
+            ConfigInfo4Beta cf = persistService.findConfigInfo4Beta(dataId, group, tenant); // 从config_info_beta获取目前数据库中数据
+
             build.remove(Objects.isNull(cf));
             build.betaIps(Objects.isNull(cf) ? null : cf.getBetaIps());
             build.content(Objects.isNull(cf) ? null : cf.getContent());
-            
+
             return DumpConfigHandler.configDump(build.build());
         } else {
             if (StringUtils.isBlank(tag)) {
                 ConfigInfo cf = persistService.findConfigInfo(dataId, group, tenant);
-                
+
                 build.remove(Objects.isNull(cf));
                 build.content(Objects.isNull(cf) ? null : cf.getContent());
                 build.type(Objects.isNull(cf) ? null : cf.getType());
-                
+
                 return DumpConfigHandler.configDump(build.build());
             } else {
-                
+
                 ConfigInfo4Tag cf = persistService.findConfigInfo4Tag(dataId, group, tenant, tag);
-                
+
                 build.remove(Objects.isNull(cf));
                 build.content(Objects.isNull(cf) ? null : cf.getContent());
-                
+
                 return DumpConfigHandler.configDump(build.build());
             }
         }
     }
-    
+
     final DumpService dumpService;
 }

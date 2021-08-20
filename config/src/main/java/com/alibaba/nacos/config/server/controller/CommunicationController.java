@@ -41,22 +41,22 @@ import javax.servlet.http.HttpServletResponse;
 @RestController
 @RequestMapping(Constants.COMMUNICATION_CONTROLLER_PATH)
 public class CommunicationController {
-    
+
     private final DumpService dumpService;
-    
+
     private final LongPollingService longPollingService;
-    
+
     private String trueStr = "true";
-    
+
     @Autowired
     public CommunicationController(DumpService dumpService, LongPollingService longPollingService) {
         this.dumpService = dumpService;
         this.longPollingService = longPollingService;
     }
-    
+
     /**
      * Notify the change of config information.
-     *
+     * 来源看这个逻辑 @See com.alibaba.nacos.config.server.service.notify.AsyncNotifyService
      */
     @GetMapping("/dataChange")
     public Boolean notifyConfigInfo(HttpServletRequest request, @RequestParam("dataId") String dataId,
@@ -65,9 +65,9 @@ public class CommunicationController {
             @RequestParam(value = "tag", required = false) String tag) {
         dataId = dataId.trim();
         group = group.trim();
-        String lastModified = request.getHeader(NotifyService.NOTIFY_HEADER_LAST_MODIFIED);
+        String lastModified = request.getHeader(NotifyService.NOTIFY_HEADER_LAST_MODIFIED); // 最后修改时间
         long lastModifiedTs = StringUtils.isEmpty(lastModified) ? -1 : Long.parseLong(lastModified);
-        String handleIp = request.getHeader(NotifyService.NOTIFY_HEADER_OP_HANDLE_IP);
+        String handleIp = request.getHeader(NotifyService.NOTIFY_HEADER_OP_HANDLE_IP);  // 对方ip
         String isBetaStr = request.getHeader("isBeta");
         if (StringUtils.isNotBlank(isBetaStr) && trueStr.equals(isBetaStr)) {
             dumpService.dump(dataId, group, tenant, lastModifiedTs, handleIp, true);
@@ -76,7 +76,7 @@ public class CommunicationController {
         }
         return true;
     }
-    
+
     /**
      * Get client config information of subscriber in local machine.
      *
@@ -87,7 +87,7 @@ public class CommunicationController {
         group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group;
         return longPollingService.getCollectSubscribleInfo(dataId, group, tenant);
     }
-    
+
     /**
      * Get client config listener lists of subscriber in local machine.
      *

@@ -47,19 +47,19 @@ import java.util.concurrent.atomic.AtomicReference;
 @Conditional(ConditionOnEmbeddedStorage.class)
 @Component
 public class EmbeddedDumpService extends DumpService {
-    
+
     private final ProtocolManager protocolManager;
-    
+
     /**
      * If it's just a normal reading failure, it can be resolved by retrying.
      */
     final String[] retryMessages = new String[] {"The conformance protocol is temporarily unavailable for reading"};
-    
+
     /**
      * If the read failed due to an internal problem in the Raft state machine, it cannot be remedied by retrying.
      */
     final String[] errorMessages = new String[] {"FSMCaller is overload.", "STATE_ERROR"};
-    
+
     /**
      * Here you inject the dependent objects constructively, ensuring that some of the dependent functionality is
      * initialized ahead of time.
@@ -73,22 +73,22 @@ public class EmbeddedDumpService extends DumpService {
         super(persistService, memberManager);
         this.protocolManager = protocolManager;
     }
-    
+
     @PostConstruct
     @Override
     protected void init() throws Throwable {
-        if (EnvUtil.getStandaloneMode()) {
+        if (EnvUtil.getStandaloneMode()) { // 单机启动
             dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor, dumpAllTagProcessor);
             return;
         }
-        
+
         CPProtocol protocol = protocolManager.getCpProtocol();
         AtomicReference<Throwable> errorReference = new AtomicReference<>(null);
         CountDownLatch waitDumpFinish = new CountDownLatch(1);
-        
+
         // watch path => /nacos_config/leader/ has value ?
         Observer observer = new Observer() {
-            
+
             @Override
             public void update(Observable o) {
                 if (!(o instanceof ProtocolMetaData.ValueItem)) {
@@ -126,14 +126,14 @@ public class EmbeddedDumpService extends DumpService {
                 });
             }
         };
-        
+
         protocol.protocolMetaData()
                 .subscribe(Constants.CONFIG_MODEL_RAFT_GROUP, MetadataKey.LEADER_META_DATA, observer);
-        
+
         // We must wait for the dump task to complete the callback operation before
         // continuing with the initialization
         ThreadUtils.latchAwait(waitDumpFinish);
-        
+
         // If an exception occurs during the execution of the dump task, the exception
         // needs to be thrown, triggering the node to start the failed process
         final Throwable ex = errorReference.get();
@@ -141,10 +141,10 @@ public class EmbeddedDumpService extends DumpService {
             throw ex;
         }
     }
-    
+
     private boolean shouldRetry(Throwable ex) {
         final String errMsg = ex.getMessage();
-        
+
         for (String failedMsg : errorMessages) {
             if (StringUtils.containsIgnoreCase(errMsg, failedMsg)) {
                 return false;
@@ -157,7 +157,7 @@ public class EmbeddedDumpService extends DumpService {
         }
         return false;
     }
-    
+
     @Override
     protected boolean canExecute() {
         if (EnvUtil.getStandaloneMode()) {
