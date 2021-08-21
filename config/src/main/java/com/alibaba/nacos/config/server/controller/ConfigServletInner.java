@@ -120,11 +120,11 @@ public class ConfigServletInner {
      */
     public String doGetConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group,
             String tenant, String tag, String clientIp) throws IOException, ServletException {
-        final String groupKey = GroupKey2.getKey(dataId, group, tenant); // 生成groupKey
+        final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String autoTag = request.getHeader("Vipserver-Tag");
         String requestIpApp = RequestUtil.getAppName(request);
-        int lockResult = tryConfigReadLock(groupKey); // 获取锁
-
+        int lockResult = tryConfigReadLock(groupKey); // lockResult > 0 cacheItem is not null
+        // lockResult=0 不存在CacheItem  获取锁失败   -1:存在CacheItem ，获取锁失败  1:存在Cache 获取锁成功
         final String requestIp = RequestUtil.getRemoteIp(request);
         boolean isBeta = false;
         if (lockResult > 0) {
@@ -268,18 +268,18 @@ public class ConfigServletInner {
                 releaseConfigReadLock(groupKey);
                 IoUtils.closeQuietly(fis);
             }
-        } else if (lockResult == 0) {
+        } else if (lockResult == 0) { // 不存在CacheItem
 
             // FIXME CacheItem No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
             ConfigTraceService
                     .logPullEvent(dataId, group, tenant, requestIpApp, -1, ConfigTraceService.PULL_EVENT_NOTFOUND, -1,
                             requestIp);
 
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND); //返回404状态
             response.getWriter().println("config data not exist");
             return HttpServletResponse.SC_NOT_FOUND + "";
 
-        } else {
+        } else { // -1 获取锁失败
 
             PULL_LOG.info("[client-get] clientIp={}, {}, get data during dump", clientIp, groupKey);
 

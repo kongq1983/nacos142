@@ -152,7 +152,7 @@ public abstract class DumpService {
                         Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
                         int totalCount = persistService.findConfigHistoryCountByTime(startTime);
                         if (totalCount > 0) {
-                            int pageSize = 1000;
+                            int pageSize = 1000; //分页
                             int removeTime = (totalCount + pageSize - 1) / pageSize;
                             LOGGER.warn(
                                     "clearConfigHistory, getBeforeStamp:{}, totalCount:{}, pageSize:{}, removeTime:{}",
@@ -250,12 +250,12 @@ public abstract class DumpService {
                     String heartheatTempLast = IoUtils.toString(fis, Constants.ENCODE);
                     heartheatLastStamp = Timestamp.valueOf(heartheatTempLast);
                     if (TimeUtils.getCurrentTime().getTime() - heartheatLastStamp.getTime()
-                            < timeStep * 60 * 60 * 1000) {
-                        isAllDump = false;
+                            < timeStep * 60 * 60 * 1000) { //<6个小时
+                        isAllDump = false; // 非全量
                     }
                 }
             }
-            if (isAllDump) {
+            if (isAllDump) { // 全量 >6个小时
                 LogUtil.DEFAULT_LOG.info("start clear all config-info.");
                 DiskUtil.clearAll();
                 dumpAllProcessor.process(new DumpAllTask());
