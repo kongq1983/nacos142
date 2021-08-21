@@ -78,7 +78,7 @@ public class ConfigCacheService {
     public static boolean dump(String dataId, String group, String tenant, String content, long lastModifiedTs,
             String type) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        CacheItem ci = makeSure(groupKey);
+        CacheItem ci = makeSure(groupKey); // todo 确保该groupKey的缓存存在CacheItem
         ci.setType(type);
         final int lockResult = tryWriteLock(groupKey);
         assert (lockResult != 0);

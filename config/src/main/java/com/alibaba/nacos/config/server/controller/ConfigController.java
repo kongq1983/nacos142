@@ -209,7 +209,7 @@ public class ConfigController {
         ParamUtils.checkParam(dataId, group, "datumId", "content");
         ParamUtils.checkParam(tag);
 
-        final String clientIp = RequestUtil.getRemoteIp(request);
+        final String clientIp = RequestUtil.getRemoteIp(request); // 获取客户端ip
         inner.doGetConfig(request, response, dataId, group, tenant, tag, clientIp);
     }
 
