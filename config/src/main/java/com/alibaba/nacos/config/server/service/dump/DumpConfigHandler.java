@@ -67,7 +67,7 @@ public class DumpConfigHandler extends Subscriber<ConfigDumpEvent> {
 
             return result;
         }
-        if (StringUtils.isBlank(event.getTag())) { // 没有tag
+        if (StringUtils.isBlank(event.getTag())) { // 没有tag  关注这里
             if (dataId.equals(AggrWhitelist.AGGRIDS_METADATA)) {
                 AggrWhitelist.load(content);
             }
@@ -81,7 +81,7 @@ public class DumpConfigHandler extends Subscriber<ConfigDumpEvent> {
             }
 
             boolean result;
-            if (!event.isRemove()) {
+            if (!event.isRemove()) { // 没删除
                 result = ConfigCacheService.dump(dataId, group, namespaceId, content, lastModified, type);
 
                 if (result) {
@@ -89,8 +89,8 @@ public class DumpConfigHandler extends Subscriber<ConfigDumpEvent> {
                             ConfigTraceService.DUMP_EVENT_OK, System.currentTimeMillis() - lastModified,
                             content.length());
                 }
-            } else {
-                result = ConfigCacheService.remove(dataId, group, namespaceId);
+            } else { // 删除
+                result = ConfigCacheService.remove(dataId, group, namespaceId); // 删除本地文件  发送LocalDataChangeEvent事件
 
                 if (result) {
                     ConfigTraceService.logDumpEvent(dataId, group, namespaceId, null, lastModified, event.getHandleIp(),

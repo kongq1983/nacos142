@@ -94,7 +94,7 @@ public class NacosConfigService implements ConfigService {
         namespace = ParamUtil.parseNamespace(properties);
         properties.put(PropertyKeyConst.NAMESPACE, namespace);
     }
-
+    /** todo 客户端获取配置内容 */
     @Override
     public String getConfig(String dataId, String group, long timeoutMs) throws NacosException {
         return getConfigInner(namespace, dataId, group, timeoutMs);
@@ -143,12 +143,12 @@ public class NacosConfigService implements ConfigService {
         cr.setGroup(group);
 
         // 优先使用本地配置
-        String content = LocalConfigInfoProcessor.getFailover(agent.getName(), dataId, group, tenant); // 从本地文件读取数据
+        String content = LocalConfigInfoProcessor.getFailover(agent.getName(), dataId, group, tenant); // 从本地文件snapshot读取数据
         if (content != null) {
             LOGGER.warn("[{}] [get-config] get failover ok,dataId={}, group={}, tenant={}, config={}", agent.getName(),
                     dataId, group, tenant, ContentUtils.truncateContent(content));
             cr.setContent(content);
-            String encryptedDataKey = LocalEncryptedDataKeyProcessor
+            String encryptedDataKey = LocalEncryptedDataKeyProcessor  // 获取密钥  ${user.home}/nacos/config/${envName}+_nacos/encrypted-data-key/failover-tenant
                     .getEncryptDataKeyFailover(agent.getName(), dataId, group, tenant);
             cr.setEncryptedDataKey(encryptedDataKey);
             configFilterChainManager.doFilter(null, cr);
@@ -158,8 +158,8 @@ public class NacosConfigService implements ConfigService {
 
         try {
             ConfigResponse response = worker.getServerConfig(dataId, group, tenant, timeoutMs);
-            cr.setContent(response.getContent());
-            cr.setEncryptedDataKey(response.getEncryptedDataKey());
+            cr.setContent(response.getContent()); // 设置内容
+            cr.setEncryptedDataKey(response.getEncryptedDataKey()); // 设置密钥
 
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();

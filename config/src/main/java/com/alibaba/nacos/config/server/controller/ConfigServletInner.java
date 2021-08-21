@@ -124,7 +124,7 @@ public class ConfigServletInner {
         String autoTag = request.getHeader("Vipserver-Tag");
         String requestIpApp = RequestUtil.getAppName(request);
         int lockResult = tryConfigReadLock(groupKey); // lockResult > 0 cacheItem is not null
-        // lockResult=0 不存在CacheItem  获取锁失败   -1:存在CacheItem ，获取锁失败  1:存在Cache 获取锁成功
+        // lockResult=0 不存在CacheItem  获取锁失败   -1:存在CacheItem ，获取锁失败  1:存在CacheItem 获取锁成功
         final String requestIp = RequestUtil.getRemoteIp(request);
         boolean isBeta = false;
         if (lockResult > 0) {
@@ -141,7 +141,7 @@ public class ConfigServletInner {
                 final String configType =
                         (null != cacheItem.getType()) ? cacheItem.getType() : FileTypeEnum.TEXT.getFileType();
                 response.setHeader("Config-Type", configType);
-                FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(configType);
+                FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(configType); // 文件类型枚举
                 String contentTypeHeader = fileTypeEnum.getContentType();
                 response.setHeader(HttpHeaderConsts.CONTENT_TYPE, contentTypeHeader);
 
@@ -158,7 +158,7 @@ public class ConfigServletInner {
                     }
                     response.setHeader("isBeta", "true");
                 } else {
-                    if (StringUtils.isBlank(tag)) {
+                    if (StringUtils.isBlank(tag)) { // 不看beta、tag 只看正常的
                         if (isUseTag(cacheItem, autoTag)) {
                             if (cacheItem.tagMd5 != null) {
                                 md5 = cacheItem.tagMd5.get(autoTag);
@@ -174,19 +174,19 @@ public class ConfigServletInner {
 
                             response.setHeader("Vipserver-Tag",
                                     URLEncoder.encode(autoTag, StandardCharsets.UTF_8.displayName()));
-                        } else {
+                        } else { // todo 重点关注这条路
                             md5 = cacheItem.getMd5();
                             lastModified = cacheItem.getLastModifiedTs();
                             if (PropertyUtil.isDirectRead()) {
-                                configInfoBase = persistService.findConfigInfo(dataId, group, tenant);
-                            } else {
-                                file = DiskUtil.targetFile(dataId, group, tenant);
+                                configInfoBase = persistService.findConfigInfo(dataId, group, tenant); //从derby读取数据  忽略这里
+                            } else { // ${user.home}/data/tenant-config-data/data/tenant-config-data/${group}/${dataId}
+                                file = DiskUtil.targetFile(dataId, group, tenant); // 有租户： /data/tenant-config-data  没租户:/data/config-data
                             }
-                            if (configInfoBase == null && fileNotExist(file)) {
+                            if (configInfoBase == null && fileNotExist(file)) { // 不是保存在derby，这里configInfoBase==null  也就是判断文件是否存在 不存在报status=404
                                 // FIXME CacheItem
                                 // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
                                 ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
-                                        ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp);
+                                        ConfigTraceService.PULL_EVENT_NOTFOUND, -1, requestIp); // 只是输出日志
 
                                 // pullLog.info("[client-get] clientIp={}, {},
                                 // no data",
@@ -229,7 +229,7 @@ public class ConfigServletInner {
                     }
                 }
 
-                response.setHeader(Constants.CONTENT_MD5, md5);
+                response.setHeader(Constants.CONTENT_MD5, md5);  //设置请求头md5值
 
                 // Disable cache.
                 response.setHeader("Pragma", "no-cache");
@@ -239,7 +239,7 @@ public class ConfigServletInner {
                     response.setDateHeader("Last-Modified", lastModified);
                 } else {
                     fis = new FileInputStream(file);
-                    response.setDateHeader("Last-Modified", file.lastModified());
+                    response.setDateHeader("Last-Modified", file.lastModified());  //设置最后修改时间-从文件最后修改时间读取
                 }
 
                 if (PropertyUtil.isDirectRead()) {
@@ -247,7 +247,7 @@ public class ConfigServletInner {
                     out.print(configInfoBase.getContent());
                     out.flush();
                     out.close();
-                } else {
+                } else { // nio方式输出到输出流LongPollingService
                     fis.getChannel()
                             .transferTo(0L, fis.getChannel().size(), Channels.newChannel(response.getOutputStream()));
                 }

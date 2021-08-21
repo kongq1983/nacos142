@@ -300,7 +300,7 @@ public class LongPollingService {
                 if (isFixedPolling()) {
                     // Ignore.
                 } else {
-                    if (event instanceof LocalDataChangeEvent) {
+                    if (event instanceof LocalDataChangeEvent) { // todo LocalDataChangeEvent 配置变动通知
                         LocalDataChangeEvent evt = (LocalDataChangeEvent) event;
                         ConfigExecutor.executeLongPolling(new DataChangeTask(evt.groupKey, evt.isBeta, evt.betaIps));
                     }

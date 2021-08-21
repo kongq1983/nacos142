@@ -34,9 +34,9 @@ import java.io.IOException;
  * @author luyanbo(RobberPhex)
  */
 public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
-    
+
     private static final Logger LOGGER = LogUtils.logger(LocalEncryptedDataKeyProcessor.class);
-    
+
     /**
      * 获取容灾配置的 EncryptedDataKey。NULL表示没有本地文件或抛出异常.
      */
@@ -45,7 +45,7 @@ public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
         if (!file.exists() || !file.isFile()) {
             return null;
         }
-        
+
         try {
             return readFile(file);
         } catch (IOException ioe) {
@@ -53,7 +53,7 @@ public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
             return null;
         }
     }
-    
+
     /**
      * 获取本地缓存文件的 EncryptedDataKey。NULL表示没有本地文件或抛出异常.
      */
@@ -65,7 +65,7 @@ public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
         if (!file.exists() || !file.isFile()) {
             return null;
         }
-        
+
         try {
             return readFile(file);
         } catch (IOException ioe) {
@@ -73,7 +73,7 @@ public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
             return null;
         }
     }
-    
+
     /**
      * 保存 encryptDataKey 的snapshot。如果内容为NULL，则删除snapshot.
      */
@@ -108,33 +108,33 @@ public class LocalEncryptedDataKeyProcessor extends LocalConfigInfoProcessor {
             LOGGER.error("[" + envName + "] save snapshot error, " + file, ioe);
         }
     }
-    
+    /**  获取密钥  ${user.home}/nacos/config/${envName}+_nacos/encrypted-data-key  */
     private static File getEncryptDataKeyFailoverFile(String envName, String dataId, String group, String tenant) {
         File tmp = new File(LOCAL_SNAPSHOT_PATH, envName + "_nacos");
         tmp = new File(tmp, "encrypted-data-key");
-        
+
         if (StringUtils.isBlank(tenant)) {
             tmp = new File(tmp, "failover");
         } else {
             tmp = new File(tmp, "failover-tenant");
             tmp = new File(tmp, tenant);
         }
-        
+
         return new File(new File(tmp, group), dataId);
     }
-    
+
     private static File getEncryptDataKeySnapshotFile(String envName, String dataId, String group, String tenant) {
         File tmp = new File(LOCAL_SNAPSHOT_PATH, envName + "_nacos");
         tmp = new File(tmp, "encrypted-data-key");
-        
+
         if (StringUtils.isBlank(tenant)) {
             tmp = new File(tmp, "snapshot");
         } else {
             tmp = new File(tmp, "snapshot-tenant");
             tmp = new File(tmp, tenant);
         }
-        
+
         return new File(new File(tmp, group), dataId);
     }
-    
+
 }

@@ -36,15 +36,15 @@ import java.io.InputStream;
  * @author Nacos
  */
 public class LocalConfigInfoProcessor {
-    
+
     private static final Logger LOGGER = LogUtils.logger(LocalConfigInfoProcessor.class);
-    
+
     public static String getFailover(String serverName, String dataId, String group, String tenant) {
         File localPath = getFailoverFile(serverName, dataId, group, tenant);
         if (!localPath.exists() || !localPath.isFile()) {
             return null;
         }
-        
+
         try {
             return readFile(localPath);
         } catch (IOException ioe) {
@@ -52,7 +52,7 @@ public class LocalConfigInfoProcessor {
             return null;
         }
     }
-    
+
     /**
      * 获取本地缓存文件内容。NULL表示没有本地文件或抛出异常.
      */
@@ -64,7 +64,7 @@ public class LocalConfigInfoProcessor {
         if (!file.exists() || !file.isFile()) {
             return null;
         }
-        
+
         try {
             return readFile(file);
         } catch (IOException ioe) {
@@ -72,12 +72,12 @@ public class LocalConfigInfoProcessor {
             return null;
         }
     }
-    
+
     protected static String readFile(File file) throws IOException {
         if (!file.exists() || !file.isFile()) {
             return null;
         }
-        
+
         if (JvmUtil.isMultiInstance()) {
             return ConcurrentDiskUtil.getFileContent(file, Constants.ENCODE);
         } else {
@@ -95,7 +95,7 @@ public class LocalConfigInfoProcessor {
             }
         }
     }
-    
+
     /**
      * Save snapshot.
      *
@@ -103,16 +103,16 @@ public class LocalConfigInfoProcessor {
      * @param dataId  data id
      * @param group   group
      * @param tenant  tenant
-     * @param config  config
+     * @param config  config  文件内容(从下面的writeFileContent可知道  config=content)
      */
     public static void saveSnapshot(String envName, String dataId, String group, String tenant, String config) {
         if (!SnapShotSwitch.getIsSnapShot()) {
             return;
         }
         File file = getSnapshotFile(envName, dataId, group, tenant);
-        if (null == config) {
+        if (null == config) { // 没有文件内存  则删除
             try {
-                IoUtils.delete(file);
+                IoUtils.delete(file); // 删除
             } catch (IOException ioe) {
                 LOGGER.error("[" + envName + "] delete snapshot error, " + file, ioe);
             }
@@ -120,12 +120,12 @@ public class LocalConfigInfoProcessor {
             try {
                 File parentFile = file.getParentFile();
                 if (!parentFile.exists()) {
-                    boolean isMdOk = parentFile.mkdirs();
+                    boolean isMdOk = parentFile.mkdirs();  // 确认父目录存在 不存在新建
                     if (!isMdOk) {
                         LOGGER.error("[{}] save snapshot error", envName);
                     }
                 }
-                
+                // 保存文件
                 if (JvmUtil.isMultiInstance()) {
                     ConcurrentDiskUtil.writeFileContent(file, config, Constants.ENCODE);
                 } else {
@@ -136,7 +136,7 @@ public class LocalConfigInfoProcessor {
             }
         }
     }
-    
+
     /**
      * 清除snapshot目录下所有缓存文件.
      */
@@ -156,7 +156,7 @@ public class LocalConfigInfoProcessor {
             LOGGER.error("clean all snapshot error, " + ioe.toString(), ioe);
         }
     }
-    
+
     /**
      * Clean snapshot.
      *
@@ -173,7 +173,7 @@ public class LocalConfigInfoProcessor {
             e.printStackTrace();
         }
     }
-    
+    /** 其实就是snapshot */
     static File getFailoverFile(String serverName, String dataId, String group, String tenant) {
         File tmp = new File(LOCAL_SNAPSHOT_PATH, serverName + "_nacos");
         tmp = new File(tmp, "data");
@@ -185,31 +185,31 @@ public class LocalConfigInfoProcessor {
         }
         return new File(new File(tmp, group), dataId);
     }
-    
+
     static File getSnapshotFile(String envName, String dataId, String group, String tenant) {
-        File tmp = new File(LOCAL_SNAPSHOT_PATH, envName + "_nacos");
+        File tmp = new File(LOCAL_SNAPSHOT_PATH, envName + "_nacos"); // ${user.home}/nacos/config/${envName}+_nacos
         if (StringUtils.isBlank(tenant)) {
-            tmp = new File(tmp, "snapshot");
+            tmp = new File(tmp, "snapshot"); // ${user.home}/nacos/config/${envName}+_nacos/snapshot
         } else {
-            tmp = new File(tmp, "snapshot-tenant");
+            tmp = new File(tmp, "snapshot-tenant"); // ${user.home}/nacos/config/${envName}+_nacos/snapshot-tenant
             tmp = new File(tmp, tenant);
         }
-        
+
         return new File(new File(tmp, group), dataId);
     }
-    
+
     public static final String LOCAL_FILEROOT_PATH;
-    
+
     public static final String LOCAL_SNAPSHOT_PATH;
-    
+
     static {
         LOCAL_FILEROOT_PATH =
                 System.getProperty("JM.LOG.PATH", System.getProperty("user.home")) + File.separator + "nacos"
-                        + File.separator + "config";
+                        + File.separator + "config"; // 一般是 ${user.home}/nacos/config
         LOCAL_SNAPSHOT_PATH =
                 System.getProperty("JM.SNAPSHOT.PATH", System.getProperty("user.home")) + File.separator + "nacos"
-                        + File.separator + "config";
+                        + File.separator + "config"; // 一般是 ${user.home}/nacos/config
         LOGGER.info("LOCAL_SNAPSHOT_PATH:{}", LOCAL_SNAPSHOT_PATH);
     }
-    
+
 }
