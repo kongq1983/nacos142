@@ -247,7 +247,7 @@ public class ClientWorker implements Closeable {
             }
         }
     }
-
+    /** todo 本地文件中缓存的数据 和 CacheData集合中的数据做对比 ，判断数据是否出现变化 */
     private void checkLocalConfig(CacheData cacheData) {
         final String dataId = cacheData.dataId;
         final String group = cacheData.group;
@@ -303,20 +303,20 @@ public class ClientWorker implements Closeable {
      * Check config info.
      */
     public void checkConfigInfo() {
-        // Dispatch tasks.
+        // Dispatch tasks. 派遣任务
         int listenerSize = cacheMap.size();
-        // Round up the longingTaskCount.
-        int longingTaskCount = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize());
+        // Round up the longingTaskCount. 默认3000个  1个任务
+        int longingTaskCount = (int) Math.ceil(listenerSize / ParamUtil.getPerTaskConfigSize()); // perTaskConfigSize默认3000  可通过PER_TASK_CONFIG_SIZE配置
         if (longingTaskCount > currentLongingTaskCount) {
             for (int i = (int) currentLongingTaskCount; i < longingTaskCount; i++) {
                 // The task list is no order.So it maybe has issues when changing.
-                executorService.execute(new LongPollingRunnable(i));
+                executorService.execute(new LongPollingRunnable(i)); // i 其实就个第几个任务
             }
             currentLongingTaskCount = longingTaskCount;
         }
     }
 
-    /**
+    /** todo 生成监听多个字符串
      * Fetch the dataId list from server.
      *
      * @param cacheDatas              CacheDatas for config information.
@@ -327,12 +327,12 @@ public class ClientWorker implements Closeable {
     List<String> checkUpdateDataIds(List<CacheData> cacheDatas, List<String> inInitializingCacheList) throws Exception {
         StringBuilder sb = new StringBuilder();
         for (CacheData cacheData : cacheDatas) {
-            if (!cacheData.isUseLocalConfigInfo()) {
+            if (!cacheData.isUseLocalConfigInfo()) { // 默认 isUseLocalConfig=false  md5变动会变true ，这个时候去server端验证
                 sb.append(cacheData.dataId).append(WORD_SEPARATOR);
                 sb.append(cacheData.group).append(WORD_SEPARATOR);
-                if (StringUtils.isBlank(cacheData.tenant)) {
+                if (StringUtils.isBlank(cacheData.tenant)) { // dataId^2Group^2contentMD5^1
                     sb.append(cacheData.getMd5()).append(LINE_SEPARATOR);
-                } else {
+                } else { // dataId^2Group^2contentMD5^2tenant^1
                     sb.append(cacheData.getMd5()).append(WORD_SEPARATOR);
                     sb.append(cacheData.getTenant()).append(LINE_SEPARATOR);
                 }
@@ -503,7 +503,7 @@ public class ClientWorker implements Closeable {
     }
 
     class LongPollingRunnable implements Runnable {
-
+        /** 该线程对应那部分的数据   只处理自己那部分数据 */
         private final int taskId;
 
         public LongPollingRunnable(int taskId) {
@@ -512,18 +512,18 @@ public class ClientWorker implements Closeable {
 
         @Override
         public void run() {
-
+            // 当前分片存放cacheData数据
             List<CacheData> cacheDatas = new ArrayList<CacheData>();
             List<String> inInitializingCacheList = new ArrayList<String>();
             try {
                 // check failover config
                 for (CacheData cacheData : cacheMap.values()) {
-                    if (cacheData.getTaskId() == taskId) {
+                    if (cacheData.getTaskId() == taskId) { // 只负责处理自己那块 比如像分布式任务
                         cacheDatas.add(cacheData);
                         try {
-                            checkLocalConfig(cacheData);
-                            if (cacheData.isUseLocalConfigInfo()) {
-                                cacheData.checkListenerMd5();
+                            checkLocalConfig(cacheData); //  todo 本地文件中缓存的数据 和 CacheData集合中的数据做对比 ，判断数据是否出现变化
+                            if (cacheData.isUseLocalConfigInfo()) { // 数据有变化，需要通知监听器
+                                cacheData.checkListenerMd5(); // md5不一致，会触发监听
                             }
                         } catch (Exception e) {
                             LOGGER.error("get local config info error", e);
@@ -531,13 +531,13 @@ public class ClientWorker implements Closeable {
                     }
                 }
 
-                // check server config
+                // check server config  检查当前分片数据 在服务端是否发生变化
                 List<String> changedGroupKeys = checkUpdateDataIds(cacheDatas, inInitializingCacheList);
                 if (!CollectionUtils.isEmpty(changedGroupKeys)) {
                     LOGGER.info("get changedGroupKeys:" + changedGroupKeys);
                 }
 
-                for (String groupKey : changedGroupKeys) {
+                for (String groupKey : changedGroupKeys) {  // 变动的groupKeys 去服务端获取最新数据，并更新到本地
                     String[] key = GroupKey.parseKey(groupKey);
                     String dataId = key[0];
                     String group = key[1];
@@ -546,10 +546,10 @@ public class ClientWorker implements Closeable {
                         tenant = key[2];
                     }
                     try {
-                        ConfigResponse response = getServerConfig(dataId, group, tenant, 3000L);
+                        ConfigResponse response = getServerConfig(dataId, group, tenant, 3000L); // 从server端口获取最新数据
                         CacheData cache = cacheMap.get(GroupKey.getKeyTenant(dataId, group, tenant));
-                        cache.setContent(response.getContent());
-                        cache.setEncryptedDataKey(response.getEncryptedDataKey());
+                        cache.setContent(response.getContent()); // 更新缓存内容
+                        cache.setEncryptedDataKey(response.getEncryptedDataKey()); // 更新缓存中的key
                         if (null != response.getConfigType()) {
                             cache.setType(response.getConfigType());
                         }
