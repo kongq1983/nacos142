@@ -86,7 +86,7 @@ import java.util.zip.GZIPOutputStream;
 @DependsOn("ProtocolManager")
 @Component
 public class RaftCore implements Closeable {
-
+    // /v1/ns
     public static final String API_VOTE = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/vote";
 
     public static final String API_BEAT = UtilsAndCommons.NACOS_NAMING_CONTEXT + "/raft/beat";
@@ -166,12 +166,12 @@ public class RaftCore implements Closeable {
 
         Loggers.RAFT.info("cache loaded, datum count: {}, current term: {}", datums.size(), peers.getTerm());
 
-        initialized = true;
+        initialized = true;  // 初始化标志
 
         Loggers.RAFT.info("finish to load data from disk, cost: {} ms.", (System.currentTimeMillis() - start));
 
-        masterTask = GlobalExecutor.registerMasterElection(new MasterElection()); // todo leader选举
-        heartbeatTask = GlobalExecutor.registerHeartbeat(new HeartBeat());  // todo 心跳
+        masterTask = GlobalExecutor.registerMasterElection(new MasterElection()); // todo leader选举 500ms执行1次
+        heartbeatTask = GlobalExecutor.registerHeartbeat(new HeartBeat());  // todo 心跳  500ms执行1次
 
         versionJudgement.registerObserver(isAllNewVersion -> {
             stopWork = isAllNewVersion;
@@ -467,11 +467,11 @@ public class RaftCore implements Closeable {
         Loggers.RAFT.warn("clean old cache datum for old raft");
         datums.clear();
     }
-    // todo leader选举
+    // todo leader选举 选举超时15s  每500ms执行1次
     public class MasterElection implements Runnable {
 
         @Override
-        public void run() {
+        public void run() { // 选举超时 默认15s超时
             try {
                 if (stopWork) {
                     return;
@@ -480,15 +480,15 @@ public class RaftCore implements Closeable {
                     return;
                 }
 
-                RaftPeer local = peers.local();
-                local.leaderDueMs -= GlobalExecutor.TICK_PERIOD_MS;
+                RaftPeer local = peers.local(); // 获取本实例 ip+port
+                local.leaderDueMs -= GlobalExecutor.TICK_PERIOD_MS; // leaderDueMs=15s    TICK_PERIOD_MS=500ms
 
                 if (local.leaderDueMs > 0) { // 休眠时间内
                     return;
                 }
-
+                // 选举超时
                 // reset timeout
-                local.resetLeaderDue();
+                local.resetLeaderDue(); // 重置 15s + [0-5s]随机数
                 local.resetHeartbeatDue();
 
                 sendVote();
