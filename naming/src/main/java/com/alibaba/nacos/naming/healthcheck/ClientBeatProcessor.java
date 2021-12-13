@@ -28,53 +28,53 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-/**
+/**  根据客户端心跳推送，如果存在已下线的，则标记为上线状态，并通知其他nacos服务器
  * Thread to update ephemeral instance triggered by client beat.
  *
  * @author nkorange
  */
 public class ClientBeatProcessor implements Runnable {
-    
+
     public static final long CLIENT_BEAT_TIMEOUT = TimeUnit.SECONDS.toMillis(15);
-    
+
     private RsInfo rsInfo;
-    
+
     private Service service;
-    
+
     @JsonIgnore
     public PushService getPushService() {
         return ApplicationUtils.getBean(PushService.class);
     }
-    
+
     public RsInfo getRsInfo() {
         return rsInfo;
     }
-    
+
     public void setRsInfo(RsInfo rsInfo) {
         this.rsInfo = rsInfo;
     }
-    
+
     public Service getService() {
         return service;
     }
-    
+
     public void setService(Service service) {
         this.service = service;
     }
-    
+
     @Override
     public void run() {
         Service service = this.service;
         if (Loggers.EVT_LOG.isDebugEnabled()) {
             Loggers.EVT_LOG.debug("[CLIENT-BEAT] processing beat: {}", rsInfo.toString());
         }
-        
+
         String ip = rsInfo.getIp();
         String clusterName = rsInfo.getCluster();
         int port = rsInfo.getPort();
         Cluster cluster = service.getClusterMap().get(clusterName);
-        List<Instance> instances = cluster.allIPs(true);
-        
+        List<Instance> instances = cluster.allIPs(true); // 得到该集群的所有临时节点
+
         for (Instance instance : instances) {
             if (instance.getIp().equals(ip) && instance.getPort() == port) {
                 if (Loggers.EVT_LOG.isDebugEnabled()) {
@@ -83,12 +83,12 @@ public class ClientBeatProcessor implements Runnable {
                 instance.setLastBeat(System.currentTimeMillis());
                 if (!instance.isMarked()) {
                     if (!instance.isHealthy()) {
-                        instance.setHealthy(true);
+                        instance.setHealthy(true); // 以前是healthy=false -> healthy=true
                         Loggers.EVT_LOG
                                 .info("service: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: client beat ok",
                                         cluster.getService().getName(), ip, port, cluster.getName(),
                                         UtilsAndCommons.LOCALHOST_SITE);
-                        getPushService().serviceChanged(service);
+                        getPushService().serviceChanged(service); // ServiceChangeEvent 事件通知
                     }
                 }
             }

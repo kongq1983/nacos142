@@ -116,7 +116,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
         this.applicationContext = applicationContext;
     }
 
-    @Override
+    @Override // UDP推送
     public void onApplicationEvent(ServiceChangeEvent event) {
         Service service = event.getService();
         String serviceName = service.getName();
@@ -133,7 +133,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
 
                 Map<String, Object> cache = new HashMap<>(16);
                 long lastRefTime = System.nanoTime();
-                for (PushClient client : clients.values()) {
+                for (PushClient client : clients.values()) {  //todo  utp推送   PushClient 是具体的服务实例
                     if (client.zombie()) {
                         Loggers.PUSH.debug("client is zombie: " + client.toString());
                         clients.remove(client.toString()); // 清除僵尸客户端
@@ -207,7 +207,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
 
         PushClient client = new PushClient(namespaceId, serviceName, clusters, agent, socketAddr, dataSource, tenant,
                 app);
-        addClient(client);
+        addClient(client); // todo add PushClient
     }
 
     /**
@@ -388,7 +388,7 @@ public class PushService implements ApplicationContextAware, ApplicationListener
      */
     public boolean canEnablePush(String agent) {
 
-        if (!switchDomain.isPushEnabled()) {
+        if (!switchDomain.isPushEnabled()) { // 默认pushEnabled=true
             return false;
         }
 
