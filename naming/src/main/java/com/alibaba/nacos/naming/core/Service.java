@@ -192,7 +192,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                 instance.setWeight(0.01D);
             }
         }
-
+        // todo 真正注册逻辑
         updateIPs(value.getInstanceList(), KeyBuilder.matchEphemeralInstanceListKey(key));
 
         recalculateChecksum();
@@ -273,7 +273,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         for (Map.Entry<String, List<Instance>> entry : ipMap.entrySet()) {
             //make every ip mine
             List<Instance> entryIPs = entry.getValue();
-            clusterMap.get(entry.getKey()).updateIps(entryIPs, ephemeral);
+            clusterMap.get(entry.getKey()).updateIps(entryIPs, ephemeral); // todo 真正注册逻辑
         }
 
         setLastModifiedMillis(System.currentTimeMillis());

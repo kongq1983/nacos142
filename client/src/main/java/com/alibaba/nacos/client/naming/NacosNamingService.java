@@ -355,10 +355,10 @@ public class NacosNamingService implements NamingService {
             boolean subscribe) throws NacosException {
 
         ServiceInfo serviceInfo;
-        if (subscribe) {
+        if (subscribe) { // springCloudAlibaba的subscribe=true
             serviceInfo = hostReactor.getServiceInfo(NamingUtils.getGroupedName(serviceName, groupName),
                     StringUtils.join(clusters, ","));
-        } else {
+        } else { // 直接从nacos服务器获取
             serviceInfo = hostReactor
                     .getServiceInfoDirectlyFromServer(NamingUtils.getGroupedName(serviceName, groupName),
                             StringUtils.join(clusters, ","));
