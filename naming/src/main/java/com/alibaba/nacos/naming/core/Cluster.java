@@ -297,12 +297,12 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         toUpdateInstances = new HashSet<>(ips);
 
         if (ephemeral) {
-            ephemeralInstances = toUpdateInstances; // todo 最终注册
+            ephemeralInstances = toUpdateInstances; // todo 最终注册 真正注册逻辑
         } else {
             persistentInstances = toUpdateInstances;
         }
     }
-
+    // todo 获取注册实例 add update delete
     private List<Instance> updatedIps(Collection<Instance> newInstance, Collection<Instance> oldInstance) {
 
         List<Instance> intersects = (List<Instance>) CollectionUtils.intersection(newInstance, oldInstance);

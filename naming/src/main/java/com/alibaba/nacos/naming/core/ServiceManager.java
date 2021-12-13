@@ -654,7 +654,7 @@ public class ServiceManager implements RecordListener<Service> {
 
             Instances instances = new Instances();
             instances.setInstanceList(instanceList);
-            // 调用consistencyService.put 处理同步过来的服务
+            // todo 调用consistencyService.put 处理同步过来的服务  集群处理
             consistencyService.put(key, instances);  // onPut 如果ephemeral=true，会把instances放入dataSource
         }
     }
