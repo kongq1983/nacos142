@@ -107,7 +107,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     public void put(String key, Record value) throws NacosException {
         onPut(key, value);
         distroProtocol.sync(new DistroKey(key, KeyBuilder.INSTANCE_LIST_KEY_PREFIX), DataOperation.CHANGE,
-                globalConfig.getTaskDispatchPeriod() / 2); //
+                globalConfig.getTaskDispatchPeriod() / 2); // todo 集群通知
     }
 
     @Override

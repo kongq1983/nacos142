@@ -633,7 +633,7 @@ public class ServiceManager implements RecordListener<Service> {
         return null;
     }
 
-    /**
+    /** todo 注册
      * Add instance to service.
      *
      * @param namespaceId namespace
