@@ -70,7 +70,7 @@ public class DistroProtocol {
         startVerifyTask();
         startLoadTask();
     }
-
+    // todo 加载数据 比如刚启动  往其他服务器拉数据
     private void startLoadTask() {
         DistroCallback loadCallback = new DistroCallback() {
             @Override

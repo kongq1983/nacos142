@@ -8,3 +8,30 @@ RaftCore (不是两阶段)
 nacos raft 没有两阶段  只有1阶段 RaftPeerSet:signalPublish:205
 
 nacos cp模式不怎么用  目前cp模式不严谨，简化版
+
+
+集群:
+ServerListManager
+ServerStatusSynchronizer(OperatorController)
+ServiceStatusSynchronizer(服务状态同步)(ServiceController)
+
+
+
+DistroProtocol(集群同步)
+TaskExecuteWorker
+
+// 这里集群同步
+private class InnerWorker extends Thread {
+
+// DistroSyncChangeTask 最终这里调用发送数据
+// DistroHttpAgent
+
+}
+
+
+// 新机器启动，往其他服务器拉数据
+DistroLoadDataTask
+
+
+
+

@@ -37,17 +37,17 @@ import java.util.concurrent.TimeUnit;
  * @author xiweng.yy
  */
 public class DistroLoadDataTask implements Runnable {
-    
+
     private final ServerMemberManager memberManager;
-    
+
     private final DistroComponentHolder distroComponentHolder;
-    
+
     private final DistroConfig distroConfig;
-    
+
     private final DistroCallback loadCallback;
-    
+
     private final Map<String, Boolean> loadCompletedMap;
-    
+
     public DistroLoadDataTask(ServerMemberManager memberManager, DistroComponentHolder distroComponentHolder,
             DistroConfig distroConfig, DistroCallback loadCallback) {
         this.memberManager = memberManager;
@@ -56,7 +56,7 @@ public class DistroLoadDataTask implements Runnable {
         this.loadCallback = loadCallback;
         loadCompletedMap = new HashMap<>(1);
     }
-    
+
     @Override
     public void run() {
         try {
@@ -72,7 +72,7 @@ public class DistroLoadDataTask implements Runnable {
             Loggers.DISTRO.error("[DISTRO-INIT] load snapshot data failed. ", e);
         }
     }
-    
+
     private void load() throws Exception {
         while (memberManager.allMembersWithoutSelf().isEmpty()) {
             Loggers.DISTRO.info("[DISTRO-INIT] waiting server list init...");
@@ -84,11 +84,11 @@ public class DistroLoadDataTask implements Runnable {
         }
         for (String each : distroComponentHolder.getDataStorageTypes()) {
             if (!loadCompletedMap.containsKey(each) || !loadCompletedMap.get(each)) {
-                loadCompletedMap.put(each, loadAllDataSnapshotFromRemote(each));
+                loadCompletedMap.put(each, loadAllDataSnapshotFromRemote(each)); // todo 往远程拉数据  只会往1台机器同步
             }
         }
     }
-    
+
     private boolean loadAllDataSnapshotFromRemote(String resourceType) {
         DistroTransportAgent transportAgent = distroComponentHolder.findTransportAgent(resourceType);
         DistroDataProcessor dataProcessor = distroComponentHolder.findDataProcessor(resourceType);
@@ -105,8 +105,8 @@ public class DistroLoadDataTask implements Runnable {
                 Loggers.DISTRO
                         .info("[DISTRO-INIT] load snapshot {} from {} result: {}", resourceType, each.getAddress(),
                                 result);
-                if (result) {
-                    return true;
+                if (result) { //todo  成功
+                    return true; // todo 只会往一台机器同步
                 }
             } catch (Exception e) {
                 Loggers.DISTRO.error("[DISTRO-INIT] load snapshot {} from {} failed.", resourceType, each.getAddress(), e);
@@ -114,7 +114,7 @@ public class DistroLoadDataTask implements Runnable {
         }
         return false;
     }
-    
+
     private boolean checkCompleted() {
         if (distroComponentHolder.getDataStorageTypes().size() != loadCompletedMap.size()) {
             return false;

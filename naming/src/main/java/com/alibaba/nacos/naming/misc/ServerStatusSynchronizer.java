@@ -25,32 +25,32 @@ import org.springframework.util.StringUtils;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
+/** ServerStatusSynchronizer 主要实现对server的status相关操作
  * Report local server status to other server.
- *
+ * path中有一节是/operator，说明是由OperatorController来处理
  * @author nacos
  * @deprecated 1.3.0 This object will be deleted sometime after version 1.3.0
  */
 public class ServerStatusSynchronizer implements Synchronizer {
-    
+
     @Override
     public void send(final String serverIP, Message msg) {
         if (StringUtils.isEmpty(serverIP)) {
             return;
         }
-        
+
         final Map<String, String> params = new HashMap<String, String>(2);
-        
+
         params.put("serverStatus", msg.getData());
-        
+
         String url = "http://" + serverIP + ":" + EnvUtil.getPort() + EnvUtil.getContextPath()
                 + UtilsAndCommons.NACOS_NAMING_CONTEXT + "/operator/server/status";
-        
+
         if (IPUtil.containsPort(serverIP)) {
             url = "http://" + serverIP + EnvUtil.getContextPath() + UtilsAndCommons.NACOS_NAMING_CONTEXT
                     + "/operator/server/status";
         }
-        
+
         try {
             HttpClient.asyncHttpGet(url, null, params, new Callback<String>() {
                 @Override
@@ -60,22 +60,22 @@ public class ServerStatusSynchronizer implements Synchronizer {
                                 serverIP);
                     }
                 }
-    
+
                 @Override
                 public void onError(Throwable throwable) {
                     Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}", serverIP, throwable);
                 }
-    
+
                 @Override
                 public void onCancel() {
-        
+
                 }
             });
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("[STATUS-SYNCHRONIZE] failed to request serverStatus, remote server: {}", serverIP, e);
         }
     }
-    
+
     @Override
     public Message get(String server, String key) {
         return null;
