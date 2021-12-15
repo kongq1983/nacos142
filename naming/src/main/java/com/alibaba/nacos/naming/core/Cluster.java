@@ -63,7 +63,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     @JsonIgnore
     private Set<Instance> persistentInstances = new HashSet<>();
 
-    @JsonIgnore
+    @JsonIgnore // todo 当前集群下的所有Instance机器列表
     private Set<Instance> ephemeralInstances = new HashSet<>(); // todo 注册表
 
     @JsonIgnore
@@ -236,7 +236,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
      * @param ephemeral whether these instances are ephemeral
      */
     public void updateIps(List<Instance> ips, boolean ephemeral) {
-
+        // 首先判断是需要更新临时注册列表还是持久化的注册列表
         Set<Instance> toUpdateInstances = ephemeral ? ephemeralInstances : persistentInstances;
 
         HashMap<String, Instance> oldIpMap = new HashMap<>(toUpdateInstances.size());
@@ -271,7 +271,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             }
         }
 
-        List<Instance> newIPs = subtract(ips, oldIpMap.values());
+        List<Instance> newIPs = subtract(ips, oldIpMap.values()); // 返回新增实例列表
         if (newIPs.size() > 0) {
             Loggers.EVT_LOG
                     .info("{} {SYNC} {IP-NEW} cluster: {}, new ips size: {}, content: {}", getService().getName(),
@@ -282,7 +282,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             }
         }
 
-        List<Instance> deadIPs = subtract(oldIpMap.values(), ips);
+        List<Instance> deadIPs = subtract(oldIpMap.values(), ips); // 返回删除实例列表
 
         if (deadIPs.size() > 0) {
             Loggers.EVT_LOG
@@ -294,31 +294,31 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             }
         }
 
-        toUpdateInstances = new HashSet<>(ips);
-
+        toUpdateInstances = new HashSet<>(ips); // todo 最后ips
+        // 将更新后的注册列表 重新复制到内存注册列表中
         if (ephemeral) {
             ephemeralInstances = toUpdateInstances; // todo 最终注册 真正注册逻辑
         } else {
             persistentInstances = toUpdateInstances;
         }
     }
-    // todo 获取注册实例 add update delete
+    // todo 获取注册实例 add update delete    oldInstance：内存中数据
     private List<Instance> updatedIps(Collection<Instance> newInstance, Collection<Instance> oldInstance) {
 
         List<Instance> intersects = (List<Instance>) CollectionUtils.intersection(newInstance, oldInstance);
-        Map<String, Instance> stringIpAddressMap = new ConcurrentHashMap<>(intersects.size());
-
+        Map<String, Instance> stringIpAddressMap = new ConcurrentHashMap<>(intersects.size()); // 创建一个map，来保存内存中的注册列表
+        // 遍历注册列表，依次添加到副本中
         for (Instance instance : intersects) {
             stringIpAddressMap.put(instance.getIp() + ":" + instance.getPort(), instance);
         }
 
-        Map<String, Integer> intersectMap = new ConcurrentHashMap<>(newInstance.size() + oldInstance.size());
-        Map<String, Instance> updatedInstancesMap = new ConcurrentHashMap<>(newInstance.size());
-        Map<String, Instance> newInstancesMap = new ConcurrentHashMap<>(newInstance.size());
+        Map<String, Integer> intersectMap = new ConcurrentHashMap<>(newInstance.size() + oldInstance.size()); // 交集
+        Map<String, Instance> updatedInstancesMap = new ConcurrentHashMap<>(newInstance.size()); // 返回这个   修改的
+        Map<String, Instance> newInstancesMap = new ConcurrentHashMap<>(newInstance.size());  // 新增实例
 
         for (Instance instance : oldInstance) {
             if (stringIpAddressMap.containsKey(instance.getIp() + ":" + instance.getPort())) {
-                intersectMap.put(instance.toString(), 1);
+                intersectMap.put(instance.toString(), 1);  // 内存中存在
             }
         }
 

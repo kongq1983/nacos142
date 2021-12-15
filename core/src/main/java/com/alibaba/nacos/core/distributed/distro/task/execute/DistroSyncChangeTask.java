@@ -23,7 +23,7 @@ import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.core.utils.Loggers;
 
-/**
+/** todo 集群同步
  * Distro sync change task.
  *
  * @author xiweng.yy

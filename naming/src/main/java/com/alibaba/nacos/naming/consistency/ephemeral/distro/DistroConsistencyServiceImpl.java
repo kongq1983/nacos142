@@ -105,7 +105,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
     @Override
     public void put(String key, Record value) throws NacosException {
-        onPut(key, value);
+        onPut(key, value); //  todo 处理本机
         distroProtocol.sync(new DistroKey(key, KeyBuilder.INSTANCE_LIST_KEY_PREFIX), DataOperation.CHANGE,
                 globalConfig.getTaskDispatchPeriod() / 2); // todo 集群通知
     }
@@ -238,7 +238,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
             Map<String, Datum<Instances>> datumMap = serializer.deserializeMap(data, Instances.class);
 
             for (Map.Entry<String, Datum<Instances>> entry : datumMap.entrySet()) {
-                dataStore.put(entry.getKey(), entry.getValue());
+                dataStore.put(entry.getKey(), entry.getValue());  // todo 这里存放dataStore
 
                 if (!listeners.containsKey(entry.getKey())) {
                     // pretty sure the service not exist:
@@ -323,14 +323,14 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
     @Override
     public void listen(String key, RecordListener listener) throws NacosException {
         if (!listeners.containsKey(key)) {
-            listeners.put(key, new ConcurrentLinkedQueue<>());
+            listeners.put(key, new ConcurrentLinkedQueue<>()); //不存在 初始化
         }
 
-        if (listeners.get(key).contains(listener)) {
+        if (listeners.get(key).contains(listener)) { // 存在不处理
             return;
         }
 
-        listeners.get(key).add(listener);
+        listeners.get(key).add(listener);  // 不存在添加listener
     }
 
     @Override
@@ -426,7 +426,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
 
                     try {
                         if (action == DataOperation.CHANGE) { // todo 走这里  value= Instances = Instance列表
-                            listener.onChange(datumKey, dataStore.get(datumKey).value); //Service
+                            listener.onChange(datumKey, dataStore.get(datumKey).value); //这里应该是有ServiceManager 或者  Service
                             continue;
                         }
 

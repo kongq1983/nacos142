@@ -18,13 +18,13 @@ package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.naming.pojo.Record;
 
-/**
+/** todo 主要有ServiceManger  Service
  * Data listener public interface.
  *
  * @author nacos
  */
 public interface RecordListener<T extends Record> {
-    
+
     /**
      * Determine if the listener was registered with this key.
      *
@@ -32,7 +32,7 @@ public interface RecordListener<T extends Record> {
      * @return true if the listener was registered with this key
      */
     boolean interests(String key);
-    
+
     /**
      * Determine if the listener is to be removed by matching the 'key'.
      *
@@ -40,7 +40,7 @@ public interface RecordListener<T extends Record> {
      * @return true if match success
      */
     boolean matchUnlistenKey(String key);
-    
+
     /**
      * Action to do if data of target key has changed.
      *
@@ -49,7 +49,7 @@ public interface RecordListener<T extends Record> {
      * @throws Exception exception
      */
     void onChange(String key, T value) throws Exception;
-    
+
     /**
      * Action to do if data of target key has been removed.
      *

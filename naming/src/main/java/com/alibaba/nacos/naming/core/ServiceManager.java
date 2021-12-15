@@ -87,7 +87,7 @@ public class ServiceManager implements RecordListener<Service> {
     private final Map<String, Map<String, Service>> serviceMap = new ConcurrentHashMap<>();
 
     private final LinkedBlockingDeque<ServiceKey> toBeUpdatedServicesQueue = new LinkedBlockingDeque<>(1024 * 1024);
-
+    // todo ServiceStatusSynchronizer 服务状态监控
     private final Synchronizer synchronizer = new ServiceStatusSynchronizer();
 
     private final Lock lock = new ReentrantLock();
@@ -153,7 +153,7 @@ public class ServiceManager implements RecordListener<Service> {
 
         try {
             Loggers.SRV_LOG.info("listen for service meta change");
-            consistencyService.listen(KeyBuilder.SERVICE_META_KEY_PREFIX, this);
+            consistencyService.listen(KeyBuilder.SERVICE_META_KEY_PREFIX, this);  // todo ServiceManager RecordListener
         } catch (NacosException e) {
             Loggers.SRV_LOG.error("listen for service meta change failed!");
         }
@@ -195,7 +195,7 @@ public class ServiceManager implements RecordListener<Service> {
         return KeyBuilder.matchServiceMetaKey(key) && !KeyBuilder.matchSwitchKey(key);
     }
 
-    @Override
+    @Override // todo putServiceAndInit
     public void onChange(String key, Service service) throws Exception {
         try {
             if (service == null) {
@@ -211,16 +211,16 @@ public class ServiceManager implements RecordListener<Service> {
 
             Service oldDom = getService(service.getNamespaceId(), service.getName());
 
-            if (oldDom != null) {
+            if (oldDom != null) { // 已经存在实例
                 oldDom.update(service);
                 // re-listen to handle the situation when the underlying listener is removed:
                 consistencyService
                         .listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true),
-                                oldDom);
+                                oldDom);  // 这里RecordListener=Service
                 consistencyService
                         .listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), false),
-                                oldDom);
-            } else {
+                                oldDom); // 这里RecordListener=Service
+            } else { // 新实例
                 putServiceAndInit(service);
             }
         } catch (Throwable e) {
@@ -454,7 +454,7 @@ public class ServiceManager implements RecordListener<Service> {
         createServiceIfAbsent(namespaceId, serviceName, local, null);
     }
 
-    /**
+    /** todo putServiceAndInit
      * Create service if not exist.
      *
      * @param namespaceId namespace
@@ -500,7 +500,7 @@ public class ServiceManager implements RecordListener<Service> {
      * @throws Exception any error occurred in the process
      */
     public void registerInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
-
+        // todo 创建Service
         createEmptyService(namespaceId, serviceName, instance.isEphemeral());
 
         Service service = getService(namespaceId, serviceName);
@@ -880,14 +880,14 @@ public class ServiceManager implements RecordListener<Service> {
         }
         serviceMap.get(service.getNamespaceId()).putIfAbsent(service.getName(), service);
     }
-
+    // todo serviceMap
     private void putServiceAndInit(Service service) throws NacosException {
         putService(service);
         service = getService(service.getNamespaceId(), service.getName());
         service.init(); // clientBeatCheckTask
-        consistencyService
+        consistencyService  // 这里RecordListener=Service
                 .listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), true), service);
-        consistencyService
+        consistencyService  // 这里RecordListener=Service
                 .listen(KeyBuilder.buildInstanceListKey(service.getNamespaceId(), service.getName(), false), service);
         Loggers.SRV_LOG.info("[NEW-SERVICE] {}", service.toJson());
     }

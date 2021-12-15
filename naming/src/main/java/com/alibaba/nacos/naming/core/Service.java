@@ -233,9 +233,9 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
      * @param ephemeral whether is ephemeral instance
      */
     public void updateIPs(Collection<Instance> instances, boolean ephemeral) {
-        Map<String, List<Instance>> ipMap = new HashMap<>(clusterMap.size());
+        Map<String, List<Instance>> ipMap = new HashMap<>(clusterMap.size()); // 所有集群的所有Instance
         for (String clusterName : clusterMap.keySet()) {
-            ipMap.put(clusterName, new ArrayList<>());
+            ipMap.put(clusterName, new ArrayList<>()); // 根据集群名称分组
         }
 
         for (Instance instance : instances) {
@@ -249,7 +249,7 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                     instance.setClusterName(UtilsAndCommons.DEFAULT_CLUSTER_NAME);
                 }
 
-                if (!clusterMap.containsKey(instance.getClusterName())) {
+                if (!clusterMap.containsKey(instance.getClusterName())) { // 集群不存在，则创建新的集群
                     Loggers.SRV_LOG
                             .warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
                                     instance.getClusterName(), instance.toJson());
@@ -257,20 +257,20 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                     cluster.init();
                     getClusterMap().put(instance.getClusterName(), cluster);
                 }
-
+                // 获取当前集群下的所有Instance
                 List<Instance> clusterIPs = ipMap.get(instance.getClusterName());
                 if (clusterIPs == null) {
                     clusterIPs = new LinkedList<>();
                     ipMap.put(instance.getClusterName(), clusterIPs);
                 }
-
+                // 添加到当前集群的列表
                 clusterIPs.add(instance);
             } catch (Exception e) {
                 Loggers.SRV_LOG.error("[NACOS-DOM] failed to process ip: " + instance, e);
             }
         }
 
-        for (Map.Entry<String, List<Instance>> entry : ipMap.entrySet()) {
+        for (Map.Entry<String, List<Instance>> entry : ipMap.entrySet()) { // 遍历集群分组Map 每个Key是一个集群
             //make every ip mine
             List<Instance> entryIPs = entry.getValue();
             clusterMap.get(entry.getKey()).updateIps(entryIPs, ephemeral); // todo 真正注册逻辑 import-import-import
@@ -516,8 +516,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
 
         setMetadata(vDom.getMetadata());
 
-        updateOrAddCluster(vDom.getClusterMap().values());
-        remvDeadClusters(this, vDom);
+        updateOrAddCluster(vDom.getClusterMap().values()); // 修改集群数据
+        remvDeadClusters(this, vDom); // 删除集群
 
         Loggers.SRV_LOG.info("cluster size, new: {}, old: {}", getClusterMap().size(), vDom.getClusterMap().size());
 

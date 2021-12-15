@@ -36,29 +36,29 @@ import java.util.Map;
  * @author xiweng.yy
  */
 public class DistroDataStorageImpl implements DistroDataStorage {
-    
+
     private final DataStore dataStore;
-    
+
     private final DistroMapper distroMapper;
-    
+
     public DistroDataStorageImpl(DataStore dataStore, DistroMapper distroMapper) {
         this.dataStore = dataStore;
         this.distroMapper = distroMapper;
     }
-    
+
     @Override
     public DistroData getDistroData(DistroKey distroKey) {
         Map<String, Datum> result = new HashMap<>(1);
         if (distroKey instanceof DistroHttpCombinedKey) {
-            result = dataStore.batchGet(((DistroHttpCombinedKey) distroKey).getActualResourceTypes());
+            result = dataStore.batchGet(((DistroHttpCombinedKey) distroKey).getActualResourceTypes()); // 从dataMap批量获取
         } else {
-            Datum datum = dataStore.get(distroKey.getResourceKey());
+            Datum datum = dataStore.get(distroKey.getResourceKey()); // 从dataMap获取1个
             result.put(distroKey.getResourceKey(), datum);
         }
         byte[] dataContent = ApplicationUtils.getBean(Serializer.class).serialize(result);
         return new DistroData(distroKey, dataContent);
     }
-    
+
     @Override
     public DistroData getDatumSnapshot() {
         Map<String, Datum> result = dataStore.getDataMap();
@@ -66,7 +66,7 @@ public class DistroDataStorageImpl implements DistroDataStorage {
         DistroKey distroKey = new DistroKey("snapshot", KeyBuilder.INSTANCE_LIST_KEY_PREFIX);
         return new DistroData(distroKey, dataContent);
     }
-    
+
     @Override
     public DistroData getVerifyData() {
         Map<String, String> keyChecksums = new HashMap<>(64);

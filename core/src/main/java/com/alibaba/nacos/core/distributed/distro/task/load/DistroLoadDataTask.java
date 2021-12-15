@@ -31,7 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-/**
+/** todo 新机器启动-往别的服务器-拉数据-只会拉1台成功的数据
  * Distro load data task.
  *
  * @author xiweng.yy
@@ -88,7 +88,7 @@ public class DistroLoadDataTask implements Runnable {
             }
         }
     }
-
+    // todo 往远程服务器拉数据
     private boolean loadAllDataSnapshotFromRemote(String resourceType) {
         DistroTransportAgent transportAgent = distroComponentHolder.findTransportAgent(resourceType);
         DistroDataProcessor dataProcessor = distroComponentHolder.findDataProcessor(resourceType);
@@ -100,7 +100,7 @@ public class DistroLoadDataTask implements Runnable {
         for (Member each : memberManager.allMembersWithoutSelf()) {
             try {
                 Loggers.DISTRO.info("[DISTRO-INIT] load snapshot {} from {}", resourceType, each.getAddress());
-                DistroData distroData = transportAgent.getDatumSnapshot(each.getAddress());
+                DistroData distroData = transportAgent.getDatumSnapshot(each.getAddress()); // DistroHttpAgent  /nacos/v1/ns/distro/datums   DistroController
                 boolean result = dataProcessor.processSnapshot(distroData);
                 Loggers.DISTRO
                         .info("[DISTRO-INIT] load snapshot {} from {} result: {}", resourceType, each.getAddress(),
